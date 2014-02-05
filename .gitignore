@@ -12,6 +12,7 @@
 /m4/
 /missing
 /stamp-h?
+/tests/check_lock_free_queue
 .deps/
 .dirstamp
 .libs/
