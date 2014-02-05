@@ -21,8 +21,5 @@ struct lock_free_queue{
     int cLength;
 } ;
 
-int nextPowerOfTwo(int value) {
-    if ((value - 1) & value == 0) return value;
-
-}
+long next_power_of_two(long value);
 #endif /* LOCK_FREE_QUEUE_H */
