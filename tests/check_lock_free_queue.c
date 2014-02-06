@@ -51,6 +51,8 @@ START_TEST (test_create_queue_simple) {
     ck_assert_int_eq(q.cachedHead, 0);
     ck_assert_int_eq(q.tail, 0);
     ck_assert_int_eq(q.cachedTail, 0);
+    
+    free_lock_free_queue(&q);
 }
 END_TEST
 
@@ -64,6 +66,8 @@ START_TEST (test_offer_simple) {
 
     ck_assert(offer(&q, (void*)&x) == 0);
     ck_assert(&x == (int*)q.cQueue[1]);
+    
+    free_lock_free_queue(&q);
 }
 END_TEST
 
@@ -79,6 +83,8 @@ START_TEST (test_offer_full) {
     ck_assert((void*)&x == (int*)q.cQueue[1]);
 
     ck_assert(offer(&q, (void*)&y) == -1);
+    
+    free_lock_free_queue(&q);
 }
 END_TEST
 
@@ -90,6 +96,8 @@ START_TEST (test_poll_simple) {
     offer(&q, (void*)&x);
 
     ck_assert(poll(&q) == (void*)&x);
+    
+    free_lock_free_queue(&q);
 }
 END_TEST
 
@@ -98,6 +106,8 @@ START_TEST (test_poll_empty) {
     create_lock_free_queue(&q, 2);
 
     ck_assert(poll(&q) == NULL);
+    
+    free_lock_free_queue(&q);
 }
 END_TEST
 
