@@ -30,10 +30,34 @@ END_TEST
 
 START_TEST (test_next_power_of_two_invalid) {
     ck_assert_int_eq(next_power_of_two(LONG_MAX), -1);
-    ck_assert_int_eq(next_power_of_two((LONG_MAX >> 1) + 2), -1);
+    ck_assert_int_eq(next_power_of_two((LONG_MAX >> 1) +  2), -1);
 }
 END_TEST
 
-int main() {
-    return 0;
+    Suite *
+lock_free_suite (void)
+{
+    Suite *s = suite_create ("Lock Free");
+
+    /* Core test case */
+    TCase *tc_core = tcase_create ("Core");
+    tcase_add_test (tc_core, test_next_power_of_two_simple);
+    tcase_add_test (tc_core, test_next_power_of_two_no_change);
+    tcase_add_test (tc_core, test_next_power_of_two_zero);
+    tcase_add_test (tc_core, test_next_power_of_two_invalid);
+    suite_add_tcase (s, tc_core);
+
+    return s;
+}
+
+    int
+main (void)
+{
+    int number_failed;
+    Suite *s = lock_free_suite ();
+    SRunner *sr = srunner_create (s);
+    srunner_run_all (sr, CK_NORMAL);
+    number_failed = srunner_ntests_failed (sr);
+    srunner_free (sr);
+    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
