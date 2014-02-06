@@ -8,18 +8,22 @@
 #endif
 
 struct lock_free_queue{
-    int head __attribute__((aligned(CACHE_LINE_SIZE)));
-    int cachedTail;
-    int pItemSize;
-    int pMask;
-    int pLength;
+    void** pQueue __attribute__((aligned(CACHE_LINE_SIZE)));
+    long head;
+    long cachedTail;
+    long pMask;
+    long pLength;
 
-    int tail __attribute__((aligned(CACHE_LINE_SIZE)));
-    int cachedHead;
-    int cItemSize;
-    int cMask;
-    int cLength;
+    void** cQueue __attribute__((aligned(CACHE_LINE_SIZE)));
+    long tail;
+    long cachedHead;
+    long cMask;
+    long cLength;
 } ;
 
 long next_power_of_two(long value);
+long create_lock_free_queue(struct lock_free_queue* queue, long length);
+int offer(struct lock_free_queue* queue, void* item);
+void* poll(struct lock_free_queue* queue);
+
 #endif /* LOCK_FREE_QUEUE_H */

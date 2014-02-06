@@ -6,8 +6,15 @@ long next_power_of_two(long value) {
     return -1;
 }
 
-int create_queue(struct queue_t *queue, 
-        long capacity, 
-        size_t item_size) {
+long create_lock_free_queue(struct lock_free_queue *queue, 
+        long capacity) {
     return -1;
+}
+
+int offer(struct lock_free_queue* queue, void* item) {
+    return 0;
+}
+
+void* poll(struct lock_free_queue* queue) {
+    return NULL;
 }
