@@ -32,6 +32,8 @@ unsigned long create_lock_free_queue(struct lock_free_queue *queue,
     queue->pQueue = calloc(queue->pLength, sizeof(void*));
     queue->cQueue = queue->pQueue;
 
+    if (queue->pQueue == NULL) return 0;
+
     return queue->pLength;
 }
 
@@ -44,14 +46,18 @@ int offer_one(struct lock_free_queue* queue, void* item) {
     unsigned long head = queue->head;
     long wrapPoint = head - queue->pLength;
 
-    if ((long)queue->cachedTail <= wrapPoint) {
+    if (__builtin_expect ((long)queue->cachedTail <= wrapPoint, 0)) {
         queue->cachedTail = queue->tail;
-        if (queue->cachedTail <= wrapPoint) {
+        if (__builtin_expect (queue->cachedTail <= wrapPoint, 0)) {
             return -1;
         }
     }
 
     queue->pQueue[head & queue->pMask] = item;
+
+    asm volatile("" ::: "memory");
+
+    //__sync_add_and_fetch (&(queue->head), 1);
     queue->head++;
     return 1;
 }
@@ -61,15 +67,18 @@ void* poll_one(struct lock_free_queue* queue) {
     unsigned long index;
     unsigned long tail = queue->tail;
     
-    if (tail < queue->cachedHead) {
+    if (__builtin_expect (tail >= queue->cachedHead, 0)) {
         queue->cachedHead = queue->head;
-        if (tail < queue->cachedHead) {
+        if (__builtin_expect (tail >= queue->cachedHead, 0)) {
             return NULL;
         }
     }
     index = tail & queue->cMask;
     item = queue->cQueue[index];
 
+    asm volatile("" ::: "memory");
+
+    //__sync_add_and_fetch (&(queue->tail), 1);
     queue->tail++;
     return item;
 }
