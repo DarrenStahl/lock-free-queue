@@ -57,5 +57,19 @@ int offer_one(struct lock_free_queue* queue, void* item) {
 }
 
 void* poll_one(struct lock_free_queue* queue) {
-    return NULL;
+    void *item;
+    unsigned long index;
+    unsigned long tail = queue->tail;
+    
+    if (tail < queue->cachedHead) {
+        queue->cachedHead = queue->head;
+        if (tail < queue->cachedHead) {
+            return NULL;
+        }
+    }
+    index = tail & queue->cMask;
+    item = queue->cQueue[index];
+
+    queue->tail++;
+    return item;
 }
