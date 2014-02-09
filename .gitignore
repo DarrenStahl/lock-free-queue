@@ -13,6 +13,7 @@
 /missing
 /stamp-h?
 /tests/check_lock_free_queue
+/tests/benchmark
 .deps/
 .dirstamp
 .libs/
