@@ -10,6 +10,7 @@ START_TEST (test_next_power_of_two_simple) {
     ck_assert_int_eq(next_power_of_two(27), 32);
     ck_assert_int_eq(next_power_of_two(33), 64);
     ck_assert_int_eq(next_power_of_two(0x80000000 - 20), 0x80000000);
+    ck_assert_int_eq(next_power_of_two(LONG_MAX), LONG_MAX + 1);
 }
 END_TEST
 
@@ -20,6 +21,7 @@ START_TEST (test_next_power_of_two_no_change) {
     ck_assert_int_eq(next_power_of_two(16), 16);
     ck_assert_int_eq(next_power_of_two(32), 32);
     ck_assert_int_eq(next_power_of_two(0x80000000), 0x80000000);
+    ck_assert_int_eq(next_power_of_two(LONG_MAX + 1), LONG_MAX + 1);
 }
 END_TEST
 
@@ -29,8 +31,8 @@ START_TEST (test_next_power_of_two_zero) {
 END_TEST
 
 START_TEST (test_next_power_of_two_invalid) {
-    ck_assert_int_eq(next_power_of_two(LONG_MAX), 0);
-    ck_assert_int_eq(next_power_of_two((LONG_MAX >> 1) +  2), 0);
+    ck_assert_int_eq(next_power_of_two(ULONG_MAX), 0);
+    ck_assert_int_eq(next_power_of_two((ULONG_MAX >> 1) +  2), 0);
 }
 END_TEST
 
@@ -61,11 +63,11 @@ START_TEST (test_offer_simple) {
     create_lock_free_queue(&q, 2);
 
     int x, y;
-    ck_assert(offer(&q, (void*)&x) == 0);
+    ck_assert(offer_one(&q, (void*)&x) != -1);
     ck_assert(&x == (int*)q.cQueue[0]);
 
-    ck_assert(offer(&q, (void*)&x) == 0);
-    ck_assert(&x == (int*)q.cQueue[1]);
+    ck_assert(offer_one(&q, (void*)&y) != -1);
+    ck_assert(&y == (int*)q.cQueue[1]);
     
     free_lock_free_queue(&q);
 }
@@ -76,13 +78,13 @@ START_TEST (test_offer_full) {
     create_lock_free_queue(&q, 2);
 
     int x, y;
-    ck_assert(offer(&q, (void*)&x) == 0);
+    ck_assert(offer_one(&q, (void*)&x) != -1);
     ck_assert((void*)&x == (int*)q.cQueue[0]);
 
-    ck_assert(offer(&q, (void*)&x) == 0);
+    ck_assert(offer_one(&q, (void*)&x)!= -1);
     ck_assert((void*)&x == (int*)q.cQueue[1]);
 
-    ck_assert(offer(&q, (void*)&y) == -1);
+    ck_assert(offer_one(&q, (void*)&y) == -1);
     
     free_lock_free_queue(&q);
 }
@@ -93,9 +95,9 @@ START_TEST (test_poll_simple) {
     create_lock_free_queue(&q, 2);
 
     int x, y;
-    offer(&q, (void*)&x);
+    offer_one(&q, (void*)&x);
 
-    ck_assert(poll(&q) == (void*)&x);
+    ck_assert(poll_one(&q) == (void*)&x);
     
     free_lock_free_queue(&q);
 }
@@ -105,7 +107,7 @@ START_TEST (test_poll_empty) {
     struct lock_free_queue q;
     create_lock_free_queue(&q, 2);
 
-    ck_assert(poll(&q) == NULL);
+    ck_assert(poll_one(&q) == NULL);
     
     free_lock_free_queue(&q);
 }
@@ -119,23 +121,23 @@ lock_free_suite (void)
     /* Core test case */
     TCase *tc_core = tcase_create ("Core internals");
     TCase *tc_create = tcase_create ("Create queue");
-    TCase *tc_offer = tcase_create ("Offer queue");
-    TCase *tc_poll = tcase_create ("Poll queue");
+    TCase *tc_offer_one = tcase_create ("Offer queue");
+    TCase *tc_poll_one = tcase_create ("Poll queue");
 
     tcase_add_test (tc_core, test_next_power_of_two_simple);
     tcase_add_test (tc_core, test_next_power_of_two_no_change);
     tcase_add_test (tc_core, test_next_power_of_two_zero);
     tcase_add_test (tc_core, test_next_power_of_two_invalid);
     tcase_add_test (tc_create, test_create_queue_simple);
-    tcase_add_test (tc_offer, test_offer_simple);
-    tcase_add_test (tc_offer, test_offer_full);
-    tcase_add_test (tc_poll, test_poll_simple);
-    tcase_add_test (tc_poll, test_poll_empty);
+    tcase_add_test (tc_offer_one, test_offer_simple);
+    tcase_add_test (tc_offer_one, test_offer_full);
+    tcase_add_test (tc_poll_one, test_poll_simple);
+    tcase_add_test (tc_poll_one, test_poll_empty);
 
     suite_add_tcase (s, tc_core);
     suite_add_tcase (s, tc_create);
-    suite_add_tcase (s, tc_offer);
-    suite_add_tcase (s, tc_poll);
+    suite_add_tcase (s, tc_offer_one);
+    suite_add_tcase (s, tc_poll_one);
 
     return s;
 }

@@ -2,9 +2,9 @@
 #include "lock_free_queue.h"
 #include <limits.h>
 
-long next_power_of_two(long value) {
-    long oldValue;
-    if (value > ((LONG_MAX >> 1) + 1)) return 0;
+unsigned long next_power_of_two(unsigned long value) {
+    unsigned long oldValue;
+    if (value > ((ULONG_MAX >> 1) + 1)) return 0;
 
     while (((value - 1) & value) != 0) {
         oldValue = value;
@@ -15,8 +15,8 @@ long next_power_of_two(long value) {
     return value;
 }
 
-long create_lock_free_queue(struct lock_free_queue *queue, 
-        long capacity) {
+unsigned long create_lock_free_queue(struct lock_free_queue *queue, 
+        unsigned long capacity) {
     queue->pLength = next_power_of_two(capacity);
     queue->cLength = queue->pLength;
     if (queue->cLength == 0) return -1;
@@ -40,10 +40,22 @@ void free_lock_free_queue(struct lock_free_queue* queue) {
     queue->cQueue = NULL;
 }
 
-int offer(struct lock_free_queue* queue, void* item) {
-    return 0;
+int offer_one(struct lock_free_queue* queue, void* item) {
+    unsigned long head = queue->head;
+    long wrapPoint = head - queue->pLength;
+
+    if ((long)queue->cachedTail <= wrapPoint) {
+        queue->cachedTail = queue->tail;
+        if (queue->cachedTail <= wrapPoint) {
+            return -1;
+        }
+    }
+
+    queue->pQueue[head & queue->pMask] = item;
+    queue->head++;
+    return 1;
 }
 
-void* poll(struct lock_free_queue* queue) {
+void* poll_one(struct lock_free_queue* queue) {
     return NULL;
 }
