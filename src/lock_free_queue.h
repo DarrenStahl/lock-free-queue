@@ -22,7 +22,7 @@ struct lock_free_queue{
 } ;
 
 unsigned long next_power_of_two(unsigned long value);
-unsigned long create_lock_free_queue(struct lock_free_queue* queue, unsigned long length);
+struct lock_free_queue* create_lock_free_queue(unsigned long length);
 int offer_one(struct lock_free_queue* queue, void* item);
 void* poll_one(struct lock_free_queue* queue);
 

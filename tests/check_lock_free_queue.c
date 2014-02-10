@@ -59,112 +59,112 @@ START_TEST (test_next_power_of_two_invalid) {
 END_TEST
 
 START_TEST (test_create_queue_simple) {
-    struct lock_free_queue q;
-    ck_assert_int_eq(create_lock_free_queue(&q, 0x80 - 1), 0x80);
+    struct lock_free_queue* q;
+    q = create_lock_free_queue(0x80 - 1);
 
-    ck_assert_int_eq(q.cLength, 0x80);
-    ck_assert_int_eq(q.pLength, 0x80);
+    ck_assert_int_eq(q->cLength, 0x80);
+    ck_assert_int_eq(q->pLength, 0x80);
 
-    ck_assert_int_eq(q.cMask, 0x7F);
-    ck_assert_int_eq(q.pMask, 0x7F);
+    ck_assert_int_eq(q->cMask, 0x7F);
+    ck_assert_int_eq(q->pMask, 0x7F);
 
-    ck_assert(q.cQueue != NULL);
-    ck_assert(q.pQueue == q.cQueue);
+    ck_assert(q->cQueue != NULL);
+    ck_assert(q->pQueue == q->cQueue);
     
-    ck_assert_int_eq(q.head, 0);
-    ck_assert_int_eq(q.cachedHead, 0);
-    ck_assert_int_eq(q.tail, 0);
-    ck_assert_int_eq(q.cachedTail, 0);
+    ck_assert_int_eq(q->head, 0);
+    ck_assert_int_eq(q->cachedHead, 0);
+    ck_assert_int_eq(q->tail, 0);
+    ck_assert_int_eq(q->cachedTail, 0);
     
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (test_offer_simple) {
-    struct lock_free_queue q;
-    create_lock_free_queue(&q, 2);
+    struct lock_free_queue *q;
+    q = create_lock_free_queue(2);
 
     int x, y;
-    ck_assert(offer_one(&q, (void*)&x) != -1);
-    ck_assert(&x == (int*)q.cQueue[0]);
+    ck_assert(offer_one(q, (void*)&x) != -1);
+    ck_assert(&x == (int*)q->cQueue[0]);
 
-    ck_assert(offer_one(&q, (void*)&y) != -1);
-    ck_assert(&y == (int*)q.cQueue[1]);
+    ck_assert(offer_one(q, (void*)&y) != -1);
+    ck_assert(&y == (int*)q->cQueue[1]);
     
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (test_offer_full) {
-    struct lock_free_queue q;
-    create_lock_free_queue(&q, 2);
+    struct lock_free_queue *q;
+    q = create_lock_free_queue(2);
 
     int x, y;
-    ck_assert(offer_one(&q, (void*)&x) != -1);
-    ck_assert((void*)&x == (int*)q.cQueue[0]);
+    ck_assert(offer_one(q, (void*)&x) != -1);
+    ck_assert((void*)&x == (int*)q->cQueue[0]);
 
-    ck_assert(offer_one(&q, (void*)&x)!= -1);
-    ck_assert((void*)&x == (int*)q.cQueue[1]);
+    ck_assert(offer_one(q, (void*)&x)!= -1);
+    ck_assert((void*)&x == (int*)q->cQueue[1]);
 
-    ck_assert(offer_one(&q, (void*)&y) == -1);
+    ck_assert(offer_one(q, (void*)&y) == -1);
     
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (test_poll_simple) {
-    struct lock_free_queue q;
-    create_lock_free_queue(&q, 2);
+    struct lock_free_queue *q;
+    q = create_lock_free_queue(2);
 
     int x, y;
-    offer_one(&q, (void*)&x);
+    offer_one(q, (void*)&x);
 
-    ck_assert(poll_one(&q) == (void*)&x);
+    ck_assert(poll_one(q) == (void*)&x);
     
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (test_poll_empty) {
-    struct lock_free_queue q;
-    create_lock_free_queue(&q, 2);
+    struct lock_free_queue *q;
+    q = create_lock_free_queue(2);
 
-    ck_assert(poll_one(&q) == NULL);
+    ck_assert(poll_one(q) == NULL);
     
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (test_end_to_end) {
-    struct lock_free_queue q;
+    struct lock_free_queue *q;
     int x, i;
 
-    create_lock_free_queue(&q, 8);
+    q = create_lock_free_queue(8);
 
-    for (i = 0; i < 8; i++) ck_assert(offer_one(&q, (void*)&x));
-    for (i = 0; i < 8; i++) ck_assert(poll_one(&q) == (void*)&x);
-    for (i = 0; i < 8; i++) ck_assert(offer_one(&q, (void*)&x));
-    for (i = 0; i < 8; i++) ck_assert(poll_one(&q) == (void*)&x);
-    free_lock_free_queue(&q);
+    for (i = 0; i < 8; i++) ck_assert(offer_one(q, (void*)&x));
+    for (i = 0; i < 8; i++) ck_assert(poll_one(q) == (void*)&x);
+    for (i = 0; i < 8; i++) ck_assert(offer_one(q, (void*)&x));
+    for (i = 0; i < 8; i++) ck_assert(poll_one(q) == (void*)&x);
+    free_lock_free_queue(q);
 }
 END_TEST
 
 START_TEST (benchmark_one_to_one_) {
-    struct lock_free_queue q;
+    struct lock_free_queue *q;
     int x, i, num = BENCHMARK_OPS;
     struct timespec time1, time2;
 
-    create_lock_free_queue(&q, num);
+    q = create_lock_free_queue(num);
 
     clock_gettime(CLOCK_REALTIME, &time1);
-    for (i = 0; i < num; i++) offer_one(&q, (void*)&x);
-    for (i = 0; i < num; i++) poll_one(&q);
+    for (i = 0; i < num; i++) offer_one(q, (void*)&x);
+    for (i = 0; i < num; i++) poll_one(q);
     clock_gettime(CLOCK_REALTIME, &time2);
     printf("--------BENCHMARK--------\n");
     printf("Total time: %lu:%lu\n", diff(time1,time2).tv_sec, diff(time1,time2).tv_nsec);
     printf("Number of operations: %lu\n", (unsigned long)num * 2);
     printf("Ops/sec: %lu\n", ((unsigned long)num * 2) / ((diff(time1, time2).tv_nsec + diff(time1, time2).tv_sec * 1000000000) * 1000000000));
-    free_lock_free_queue(&q);
+    free_lock_free_queue(q);
 }
 END_TEST
 

@@ -15,11 +15,19 @@ unsigned long next_power_of_two(unsigned long value) {
     return value;
 }
 
-unsigned long create_lock_free_queue(struct lock_free_queue *queue, 
-        unsigned long capacity) {
+struct lock_free_queue* create_lock_free_queue(unsigned long capacity) {
+    struct lock_free_queue *queue;
+    queue = malloc(sizeof(struct lock_free_queue));
+    
+    if (queue == NULL) return NULL;
+
     queue->pLength = next_power_of_two(capacity);
     queue->cLength = queue->pLength;
-    if (queue->cLength == 0) return -1;
+
+    if (queue->cLength == 0) {
+        free(queue);
+        return NULL;
+    }
 
     queue->pMask = queue->pLength - 1;
     queue->cMask = queue->cLength - 1;
@@ -32,14 +40,18 @@ unsigned long create_lock_free_queue(struct lock_free_queue *queue,
     queue->pQueue = calloc(queue->pLength, sizeof(void*));
     queue->cQueue = queue->pQueue;
 
-    if (queue->pQueue == NULL) return 0;
+    if (queue->pQueue == NULL) {
+        free(queue);
+        return NULL;
+    }
 
-    return queue->pLength;
+    return queue;
 }
 
 void free_lock_free_queue(struct lock_free_queue* queue) {
     free(queue->pQueue);
     queue->cQueue = NULL;
+    free(queue);
 }
 
 int offer_one(struct lock_free_queue* queue, void* item) {
