@@ -14,17 +14,12 @@
  */
 unsigned long next_power_of_two(unsigned long value) {
     unsigned long oldValue;
-    //Cand we make a valid power of two? If not, return now.
     if (value > ((ULONG_MAX >> 1) + 1)) return 0;
 
-    //Not the most efficient method to do this, but, it works.
     while (((value - 1) & value) != 0) {
         oldValue = value;
-        //Increment to see if we can "flip" the bits to get a single 1
         value = (value + 1);
-        //Are we done?
         if (((value - 1) & value) == 0) return value;
-        //Else, fill in all the blanks we've covered and try again
         value |= oldValue;
     }
     return value;
@@ -43,15 +38,12 @@ unsigned long next_power_of_two(unsigned long value) {
  */
 struct lock_free_queue* create_lock_free_queue(unsigned long capacity) {
     struct lock_free_queue *queue;
-    //First we make a queue.
     queue = malloc(sizeof(struct lock_free_queue));
     if (queue == NULL) return NULL;
 
-    //Store the length
     queue->pLength = next_power_of_two(capacity);
     queue->cLength = queue->pLength;
 
-    //If invalid power, fail.
     if (queue->cLength == 0) {
         free(queue);
         return NULL;
@@ -61,7 +53,6 @@ struct lock_free_queue* create_lock_free_queue(unsigned long capacity) {
     queue->pMask = queue->pLength - 1;
     queue->cMask = queue->cLength - 1;
 
-    //All the head and tails are 0.
     queue->head = 0;
     queue->cachedHead = 0;
     queue->tail = 0;
@@ -105,9 +96,7 @@ void free_lock_free_queue(struct lock_free_queue* queue) {
  *      1 on success.
  */
 int offer_one(struct lock_free_queue* queue, void* item) {
-    //Local version of the head
     unsigned long head = queue->head;
-    //Where must we be in order to safely insert
     long wrapPoint = head - queue->pLength;
 
     //Try our cached tail, if this fails we still have a chance.
@@ -121,14 +110,12 @@ int offer_one(struct lock_free_queue* queue, void* item) {
         }
     }
 
-    //Insert the item, using the bitmask to calculate a mod
     queue->pQueue[head & queue->pMask] = item;
 
     //Memory barrier. This prevents an increment of the head before the queue is
     //safe to access. This does not force buffer flush.
     asm volatile("" ::: "memory");
 
-    //The queue is now safe for a consumer.
     queue->head++;
     return 1;
 }
@@ -161,14 +148,12 @@ void* poll_one(struct lock_free_queue* queue) {
             return NULL;
         }
     }
-    //Take the item
     index = tail & queue->cMask;
     item = queue->cQueue[index];
 
     //Memory fence as above, prevents re-ordering of instructions.
     asm volatile("" ::: "memory");
 
-    //Space is now open to be filled
     queue->tail++;
     return item;
 }
