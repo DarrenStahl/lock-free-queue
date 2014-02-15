@@ -32,6 +32,8 @@ struct lock_free_queue{
     unsigned long cachedTail;
     unsigned long pMask;
     unsigned long pLength;
+    unsigned long currentProducers;
+    unsigned long finishedProducers;
 
     void** cQueue __attribute__((aligned(CACHE_LINE_SIZE)));
     unsigned long tail;

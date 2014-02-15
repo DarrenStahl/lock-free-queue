@@ -135,8 +135,13 @@ int offer_one(struct lock_free_queue* queue, void* item) {
 int offer_mul(struct lock_free_queue* queue, void* item) {
     unsigned long head;
     unsigned long index, mask, length;
+    unsigned long slot;
     void ** localQueue;
     long wrapPoint;
+
+    index = 0;
+
+    slot = __sync_fetch_and_add(&queue->nextSlot, 1);
 
     mask = queue->pMask;
     length = queue->pLength;
@@ -152,14 +157,16 @@ int offer_mul(struct lock_free_queue* queue, void* item) {
                 return -1;
             }
         }
-        index = head & mask;
+        if (index != (head & mask)) printf("Filling %lu, %p\n", (head + slot) & mask, localQueue[(head + slot) & mask]);
+        index = (head + slot) & mask;
     } while (!__sync_bool_compare_and_swap(&localQueue[index], NULL, item));
 
     //Memory barrier. This prevents an increment of the head before the queue is
     //safe to access. This does not force buffer flush.
     asm volatile("" ::: "memory");
+    while(!__sync_bool_compare_and_swap(&queue->head, head + slot, queue->head + 1));
+    slot = __sync_fetch_and_sub(&queue->currentProducers, 1);
 
-    queue->head++;
     return 1;
 }
 
