@@ -120,6 +120,49 @@ int offer_one(struct lock_free_queue* queue, void* item) {
     return 1;
 }
 
+/*! \brief Offer an item to the lock_free_queue. Supports multiple producers.
+ *
+ *  Offers an item to a valid lock free queue. This method will not block
+ *  on a full queue, but rather just return a -1. It is up to the user to
+ *  block if they so please. This function can be used if multiple
+ *  producers are working on the same queue, but can NOT be used on the 
+ *  same queue as offer_one().
+ *
+ *  Returns:
+ *      -1 on failure to insert item into the queue.
+ *      1 on success.
+ */
+int offer_mul(struct lock_free_queue* queue, void* item) {
+    unsigned long head;
+    unsigned long index, mask, length;
+    void ** localQueue;
+    long wrapPoint;
+
+    mask = queue->pMask;
+    length = queue->pLength;
+    localQueue = queue->pQueue;
+
+    do {
+        head = queue->head;
+        wrapPoint = head - length;
+
+        if (__builtin_expect ((long)queue->cachedTail <= wrapPoint, 0)) {
+            queue->cachedTail = queue->tail;
+            if (__builtin_expect (queue->cachedTail <= wrapPoint, 0)) {
+                return -1;
+            }
+        }
+        index = head & mask;
+    } while (!__sync_bool_compare_and_swap(&localQueue[index], NULL, item));
+
+    //Memory barrier. This prevents an increment of the head before the queue is
+    //safe to access. This does not force buffer flush.
+    asm volatile("" ::: "memory");
+
+    queue->head++;
+    return 1;
+}
+
 /*! \brief Poll the queue for a new item. Single consumer only.
  *
  *  Polls the queue in an attempt to get the next item in the queue.
@@ -134,8 +177,11 @@ int offer_one(struct lock_free_queue* queue, void* item) {
  */
 void* poll_one(struct lock_free_queue* queue) {
     void *item;
+    void **localQueue;
     unsigned long index;
     unsigned long tail = queue->tail;
+
+    localQueue = queue->cQueue;
     
     //Try our cached head, this is to save a cache invalidation of 
     //the produceron each poll if we are well apart and not in danger
@@ -149,7 +195,8 @@ void* poll_one(struct lock_free_queue* queue) {
         }
     }
     index = tail & queue->cMask;
-    item = queue->cQueue[index];
+    item = localQueue[index];
+    localQueue[index] = NULL;
 
     //Memory fence as above, prevents re-ordering of instructions.
     asm volatile("" ::: "memory");

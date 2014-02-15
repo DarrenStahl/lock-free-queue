@@ -26,22 +26,23 @@ struct timespec diff(struct timespec start, struct timespec end)
 
 int main() {
     struct lock_free_queue *q;
-    unsigned long i, num = BENCHMARK_OPS;
+    unsigned long i, n, num = BENCHMARK_OPS;
     struct timespec time1, time2;
 
     q = create_lock_free_queue(num);
     if (q == NULL) return -1;
 
     clock_gettime(CLOCK_MONOTONIC_COARSE, &time1);
-    for (i = 0; i < num; i++) offer_one(q, NULL);
-    for (i = 0; i < num; i++) poll_one(q);
-    for (i = 0; i < num; i++) offer_one(q, NULL);
-    for (i = 0; i < num; i++) poll_one(q);
+    for (n = 0; n < 100; n++) {
+        for (i = 0; i < num; i++) offer_one(q, (void*)1);
+        for (i = 0; i < num; i++) poll_one(q);
+    }
     clock_gettime(CLOCK_MONOTONIC_COARSE, &time2);
     printf("--------BENCHMARK--------\n");
     printf("Total time: %lu:%lu\n", diff(time1,time2).tv_sec, diff(time1,time2).tv_nsec);
     printf("Number of operations: %lu\n", (unsigned long)num * 4);
-    printf("Ops/sec: %lu\n", ((unsigned long)num * 4 * 1000000000) / (diff(time1, time2).tv_nsec + diff(time1, time2).tv_sec * 1000000000));
+    printf("Ops/sec: %lu\n", ((unsigned long)num * 100 * 2 * 1000000000) / (diff(time1, time2).tv_nsec + diff(time1, time2).tv_sec * 1000000000));
 
     free_lock_free_queue(q);
+    return 1;
 }
