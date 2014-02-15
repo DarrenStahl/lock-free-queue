@@ -116,7 +116,7 @@ START_TEST (test_poll_simple) {
     struct lock_free_queue *q;
     q = create_lock_free_queue(2);
 
-    int x, y;
+    int x;
     offer_one(q, (void*)&x);
 
     ck_assert(poll_one(q) == (void*)&x);
