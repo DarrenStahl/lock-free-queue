@@ -43,6 +43,7 @@ struct lock_free_queue{
 //Function declarations
 unsigned long next_power_of_two(unsigned long value);
 struct lock_free_queue* create_lock_free_queue(unsigned long length);
+void free_lock_free_queue(struct lock_free_queue*);
 int offer_one(struct lock_free_queue* queue, void* item);
 void* poll_one(struct lock_free_queue* queue);
 
